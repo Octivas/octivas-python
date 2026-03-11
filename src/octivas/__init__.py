@@ -1,6 +1,15 @@
 """Octivas Python SDK - Web scraping and extraction API client."""
 
-from .client import Octivas, AsyncOctivas
+from .client import AsyncOctivas, Octivas
+from .exceptions import (
+    AuthenticationError,
+    BadRequestError,
+    ForbiddenError,
+    NotFoundError,
+    OctivasError,
+    RateLimitError,
+    ServerError,
+)
 from .models import (
     BatchScrapeJob,
     BatchScrapeStatus,
@@ -11,14 +20,6 @@ from .models import (
     ScrapeResponse,
     SearchResponse,
     SearchResultItem,
-)
-from .exceptions import (
-    OctivasError,
-    AuthenticationError,
-    BadRequestError,
-    NotFoundError,
-    RateLimitError,
-    ServerError,
 )
 
 __version__ = "0.1.0"
@@ -38,6 +39,7 @@ __all__ = [
     "OctivasError",
     "AuthenticationError",
     "BadRequestError",
+    "ForbiddenError",
     "NotFoundError",
     "RateLimitError",
     "ServerError",

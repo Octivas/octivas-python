@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import contextlib
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 
 from .exceptions import (
     AuthenticationError,
     BadRequestError,
+    ForbiddenError,
     NotFoundError,
     OctivasError,
     RateLimitError,
@@ -33,7 +35,7 @@ def _build_headers(api_key: str) -> dict[str, str]:
     return {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "User-Agent": "octivas-python/0.1.0",
+        "User-Agent": "octivas-python/0.1.1",
     }
 
 
@@ -41,36 +43,36 @@ def _raise_for_status(response: httpx.Response) -> None:
     if response.is_success:
         return
     body: dict[str, Any] = {}
-    try:
+    with contextlib.suppress(Exception):
         body = response.json()
-    except Exception:
-        pass
     message = body.get("error", response.text or f"HTTP {response.status_code}")
-    kwargs = {"status_code": response.status_code, "body": body}
-    if response.status_code == 401:
-        raise AuthenticationError(message, **kwargs)
-    if response.status_code in (400, 422):
-        raise BadRequestError(message, **kwargs)
-    if response.status_code == 404:
-        raise NotFoundError(message, **kwargs)
-    if response.status_code == 429:
-        raise RateLimitError(message, **kwargs)
-    if response.status_code >= 500:
-        raise ServerError(message, **kwargs)
-    raise OctivasError(message, **kwargs)
+    sc = response.status_code
+    if sc == 401:
+        raise AuthenticationError(message, status_code=sc, body=body)
+    if sc == 403:
+        raise ForbiddenError(message, status_code=sc, body=body)
+    if sc in (400, 422):
+        raise BadRequestError(message, status_code=sc, body=body)
+    if sc == 404:
+        raise NotFoundError(message, status_code=sc, body=body)
+    if sc == 429:
+        raise RateLimitError(message, status_code=sc, body=body)
+    if sc >= 500:
+        raise ServerError(message, status_code=sc, body=body)
+    raise OctivasError(message, status_code=sc, body=body)
 
 
 def _scrape_payload(
     url: str,
     *,
-    formats: Optional[List[ContentFormat]] = None,
-    schema: Optional[Dict[str, Any]] = None,
-    prompt: Optional[str] = None,
-    max_age: Optional[int] = None,
-    store_in_cache: Optional[bool] = None,
-    location: Optional[Location] = None,
-    only_main_content: Optional[bool] = None,
-    timeout: Optional[int] = None,
+    formats: list[ContentFormat] | None = None,
+    schema: dict[str, Any] | None = None,
+    prompt: str | None = None,
+    max_age: int | None = None,
+    store_in_cache: bool | None = None,
+    location: Location | None = None,
+    only_main_content: bool | None = None,
+    timeout: int | None = None,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {"url": url}
     if formats is not None:
@@ -125,7 +127,7 @@ class Octivas:
     def close(self) -> None:
         self._client.close()
 
-    def __enter__(self) -> "Octivas":
+    def __enter__(self) -> Octivas:
         return self
 
     def __exit__(self, *_: Any) -> None:
@@ -137,14 +139,14 @@ class Octivas:
         self,
         url: str,
         *,
-        formats: Optional[List[ContentFormat]] = None,
-        schema: Optional[Dict[str, Any]] = None,
-        prompt: Optional[str] = None,
-        max_age: Optional[int] = None,
-        store_in_cache: Optional[bool] = None,
-        location: Optional[Location] = None,
-        only_main_content: Optional[bool] = None,
-        timeout: Optional[int] = None,
+        formats: list[ContentFormat] | None = None,
+        schema: dict[str, Any] | None = None,
+        prompt: str | None = None,
+        max_age: int | None = None,
+        store_in_cache: bool | None = None,
+        location: Location | None = None,
+        only_main_content: bool | None = None,
+        timeout: int | None = None,
     ) -> ScrapeResponse:
         """Scrape a single page."""
         payload = _scrape_payload(
@@ -166,16 +168,16 @@ class Octivas:
 
     def batch_scrape(
         self,
-        urls: List[str],
+        urls: list[str],
         *,
-        formats: Optional[List[ContentFormat]] = None,
-        schema: Optional[Dict[str, Any]] = None,
-        prompt: Optional[str] = None,
-        max_age: Optional[int] = None,
-        store_in_cache: Optional[bool] = None,
-        location: Optional[Location] = None,
-        only_main_content: Optional[bool] = None,
-        timeout: Optional[int] = None,
+        formats: list[ContentFormat] | None = None,
+        schema: dict[str, Any] | None = None,
+        prompt: str | None = None,
+        max_age: int | None = None,
+        store_in_cache: bool | None = None,
+        location: Location | None = None,
+        only_main_content: bool | None = None,
+        timeout: int | None = None,
     ) -> BatchScrapeJob:
         """Submit a batch scrape job. Poll with :meth:`batch_scrape_status`."""
         payload: dict[str, Any] = {"urls": urls}
@@ -229,17 +231,17 @@ class Octivas:
         url: str,
         *,
         limit: int = 10,
-        formats: Optional[List[ContentFormat]] = None,
-        exclude_paths: Optional[List[str]] = None,
-        include_paths: Optional[List[str]] = None,
-        max_depth: Optional[int] = None,
-        allow_external_links: Optional[bool] = None,
-        allow_subdomains: Optional[bool] = None,
-        ignore_sitemap: Optional[bool] = None,
-        ignore_query_parameters: Optional[bool] = None,
-        only_main_content: Optional[bool] = None,
-        timeout: Optional[int] = None,
-        wait_for: Optional[int] = None,
+        formats: list[ContentFormat] | None = None,
+        exclude_paths: list[str] | None = None,
+        include_paths: list[str] | None = None,
+        max_depth: int | None = None,
+        allow_external_links: bool | None = None,
+        allow_subdomains: bool | None = None,
+        ignore_sitemap: bool | None = None,
+        ignore_query_parameters: bool | None = None,
+        only_main_content: bool | None = None,
+        timeout: int | None = None,
+        wait_for: int | None = None,
     ) -> CrawlResponse:
         """Crawl a website and extract content from discovered pages."""
         payload: dict[str, Any] = {"url": url, "limit": limit}
@@ -276,12 +278,12 @@ class Octivas:
         query: str,
         *,
         limit: int = 5,
-        formats: Optional[List[ContentFormat]] = None,
-        location: Optional[str] = None,
-        country: Optional[str] = None,
-        tbs: Optional[str] = None,
-        only_main_content: Optional[bool] = None,
-        timeout: Optional[int] = None,
+        formats: list[ContentFormat] | None = None,
+        location: str | None = None,
+        country: str | None = None,
+        tbs: str | None = None,
+        only_main_content: bool | None = None,
+        timeout: int | None = None,
     ) -> SearchResponse:
         """Search the web and extract content from results."""
         payload: dict[str, Any] = {"query": query, "limit": limit}
@@ -335,7 +337,7 @@ class AsyncOctivas:
     async def close(self) -> None:
         await self._client.aclose()
 
-    async def __aenter__(self) -> "AsyncOctivas":
+    async def __aenter__(self) -> AsyncOctivas:
         return self
 
     async def __aexit__(self, *_: Any) -> None:
@@ -347,14 +349,14 @@ class AsyncOctivas:
         self,
         url: str,
         *,
-        formats: Optional[List[ContentFormat]] = None,
-        schema: Optional[Dict[str, Any]] = None,
-        prompt: Optional[str] = None,
-        max_age: Optional[int] = None,
-        store_in_cache: Optional[bool] = None,
-        location: Optional[Location] = None,
-        only_main_content: Optional[bool] = None,
-        timeout: Optional[int] = None,
+        formats: list[ContentFormat] | None = None,
+        schema: dict[str, Any] | None = None,
+        prompt: str | None = None,
+        max_age: int | None = None,
+        store_in_cache: bool | None = None,
+        location: Location | None = None,
+        only_main_content: bool | None = None,
+        timeout: int | None = None,
     ) -> ScrapeResponse:
         """Scrape a single page."""
         payload = _scrape_payload(
@@ -376,16 +378,16 @@ class AsyncOctivas:
 
     async def batch_scrape(
         self,
-        urls: List[str],
+        urls: list[str],
         *,
-        formats: Optional[List[ContentFormat]] = None,
-        schema: Optional[Dict[str, Any]] = None,
-        prompt: Optional[str] = None,
-        max_age: Optional[int] = None,
-        store_in_cache: Optional[bool] = None,
-        location: Optional[Location] = None,
-        only_main_content: Optional[bool] = None,
-        timeout: Optional[int] = None,
+        formats: list[ContentFormat] | None = None,
+        schema: dict[str, Any] | None = None,
+        prompt: str | None = None,
+        max_age: int | None = None,
+        store_in_cache: bool | None = None,
+        location: Location | None = None,
+        only_main_content: bool | None = None,
+        timeout: int | None = None,
     ) -> BatchScrapeJob:
         """Submit a batch scrape job."""
         payload: dict[str, Any] = {"urls": urls}
@@ -441,17 +443,17 @@ class AsyncOctivas:
         url: str,
         *,
         limit: int = 10,
-        formats: Optional[List[ContentFormat]] = None,
-        exclude_paths: Optional[List[str]] = None,
-        include_paths: Optional[List[str]] = None,
-        max_depth: Optional[int] = None,
-        allow_external_links: Optional[bool] = None,
-        allow_subdomains: Optional[bool] = None,
-        ignore_sitemap: Optional[bool] = None,
-        ignore_query_parameters: Optional[bool] = None,
-        only_main_content: Optional[bool] = None,
-        timeout: Optional[int] = None,
-        wait_for: Optional[int] = None,
+        formats: list[ContentFormat] | None = None,
+        exclude_paths: list[str] | None = None,
+        include_paths: list[str] | None = None,
+        max_depth: int | None = None,
+        allow_external_links: bool | None = None,
+        allow_subdomains: bool | None = None,
+        ignore_sitemap: bool | None = None,
+        ignore_query_parameters: bool | None = None,
+        only_main_content: bool | None = None,
+        timeout: int | None = None,
+        wait_for: int | None = None,
     ) -> CrawlResponse:
         """Crawl a website and extract content from discovered pages."""
         payload: dict[str, Any] = {"url": url, "limit": limit}
@@ -488,12 +490,12 @@ class AsyncOctivas:
         query: str,
         *,
         limit: int = 5,
-        formats: Optional[List[ContentFormat]] = None,
-        location: Optional[str] = None,
-        country: Optional[str] = None,
-        tbs: Optional[str] = None,
-        only_main_content: Optional[bool] = None,
-        timeout: Optional[int] = None,
+        formats: list[ContentFormat] | None = None,
+        location: str | None = None,
+        country: str | None = None,
+        tbs: str | None = None,
+        only_main_content: bool | None = None,
+        timeout: int | None = None,
     ) -> SearchResponse:
         """Search the web and extract content from results."""
         payload: dict[str, Any] = {"query": query, "limit": limit}

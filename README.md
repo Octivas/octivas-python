@@ -16,11 +16,11 @@ from octivas import Octivas
 client = Octivas(api_key="oc-...")
 
 # Scrape a single page
-result = client.scrape("https://example.com")
+result = client.scrape("https://docs.octivas.com")
 print(result.markdown)
 
 # Crawl a website
-crawl = client.crawl("https://docs.example.com", limit=20)
+crawl = client.crawl("https://docs.octivas.com", limit=20)
 for page in crawl.pages:
     print(page.url, page.metadata.title)
 
@@ -36,7 +36,7 @@ for item in search.results:
 from octivas import AsyncOctivas
 
 async with AsyncOctivas(api_key="oc-...") as client:
-    result = await client.scrape("https://example.com")
+    result = await client.scrape("https://docs.octivas.com")
     print(result.markdown)
 ```
 
@@ -45,7 +45,7 @@ async with AsyncOctivas(api_key="oc-...") as client:
 ```python
 client = Octivas(api_key="oc-...")
 
-job = client.batch_scrape(["https://a.com", "https://b.com"])
+job = client.batch_scrape(["https://docs.octivas.com", "https://octivas.com"])
 status = client.batch_scrape_wait(job.job_id)
 
 for result in status.results:
@@ -60,7 +60,7 @@ from octivas import Octivas, AuthenticationError, RateLimitError
 client = Octivas(api_key="oc-...")
 
 try:
-    result = client.scrape("https://example.com")
+    result = client.scrape("https://docs.octivas.com")
 except AuthenticationError:
     print("Invalid API key")
 except RateLimitError:

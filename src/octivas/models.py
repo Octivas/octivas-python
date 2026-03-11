@@ -6,7 +6,7 @@ These mirror the API's response schemas so users get typed, validated objects.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -19,58 +19,58 @@ class Location(BaseModel):
     """Geographic location settings."""
 
     country: str = Field(..., min_length=2, max_length=2, description="ISO 3166-1 alpha-2 code")
-    languages: List[str] = Field(default=["en"])
+    languages: list[str] = Field(default=["en"])
 
 
 class PageMetadata(BaseModel):
     """Metadata extracted from a scraped page."""
 
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
     url: str
-    language: Optional[str] = None
-    status_code: Optional[int] = None
-    credits_used: Optional[int] = None
-    favicon: Optional[str] = None
-    og_title: Optional[str] = None
-    og_description: Optional[str] = None
-    og_image: Optional[str] = None
-    og_url: Optional[str] = None
-    og_site_name: Optional[str] = None
-    keywords: Optional[str] = None
-    author: Optional[str] = None
-    published_time: Optional[datetime] = None
-    modified_time: Optional[datetime] = None
+    language: str | None = None
+    status_code: int | None = None
+    credits_used: int | None = None
+    favicon: str | None = None
+    og_title: str | None = None
+    og_description: str | None = None
+    og_image: str | None = None
+    og_url: str | None = None
+    og_site_name: str | None = None
+    keywords: str | None = None
+    author: str | None = None
+    published_time: datetime | None = None
+    modified_time: datetime | None = None
 
 
 class PageContent(BaseModel):
     """Content extracted from a scraped page."""
 
     url: str
-    markdown: Optional[str] = None
-    html: Optional[str] = None
-    raw_html: Optional[str] = None
-    screenshot: Optional[str] = None
-    links: Optional[List[str]] = None
-    json_data: Optional[Dict[str, Any]] = Field(default=None, alias="json")
-    images: Optional[List[str]] = None
-    summary: Optional[str] = None
-    metadata: Optional[PageMetadata] = None
+    markdown: str | None = None
+    html: str | None = None
+    raw_html: str | None = None
+    screenshot: str | None = None
+    links: list[str] | None = None
+    json_data: dict[str, Any] | None = Field(default=None, alias="json")
+    images: list[str] | None = None
+    summary: str | None = None
+    metadata: PageMetadata | None = None
 
 
 class SearchResultItem(BaseModel):
     """A single search result."""
 
     url: str
-    title: Optional[str] = None
-    description: Optional[str] = None
-    markdown: Optional[str] = None
-    html: Optional[str] = None
-    raw_html: Optional[str] = None
-    screenshot: Optional[str] = None
-    links: Optional[List[str]] = None
-    images: Optional[List[str]] = None
-    summary: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    markdown: str | None = None
+    html: str | None = None
+    raw_html: str | None = None
+    screenshot: str | None = None
+    links: list[str] | None = None
+    images: list[str] | None = None
+    summary: str | None = None
 
 
 # ── Response models ──────────────────────────────────────────────────────────
@@ -81,15 +81,15 @@ class ScrapeResponse(BaseModel):
 
     success: bool
     url: str
-    markdown: Optional[str] = None
-    html: Optional[str] = None
-    raw_html: Optional[str] = None
-    screenshot: Optional[str] = None
-    links: Optional[List[str]] = None
-    json_data: Optional[Dict[str, Any]] = Field(default=None, alias="json")
-    images: Optional[List[str]] = None
-    summary: Optional[str] = None
-    metadata: Optional[PageMetadata] = None
+    markdown: str | None = None
+    html: str | None = None
+    raw_html: str | None = None
+    screenshot: str | None = None
+    links: list[str] | None = None
+    json_data: dict[str, Any] | None = Field(default=None, alias="json")
+    images: list[str] | None = None
+    summary: str | None = None
+    metadata: PageMetadata | None = None
 
 
 class BatchScrapeJob(BaseModel):
@@ -110,7 +110,7 @@ class BatchScrapeStatus(BaseModel):
     completed: int
     total: int
     credits_used: int = 0
-    results: List[ScrapeResponse] = []
+    results: list[ScrapeResponse] = []
 
 
 class CrawlResponse(BaseModel):
@@ -120,7 +120,7 @@ class CrawlResponse(BaseModel):
     url: str
     pages_crawled: int
     credits_used: int = 0
-    pages: List[PageContent]
+    pages: list[PageContent]
 
 
 class SearchResponse(BaseModel):
@@ -130,4 +130,4 @@ class SearchResponse(BaseModel):
     query: str
     results_count: int
     credits_used: int = 0
-    results: List[SearchResultItem]
+    results: list[SearchResultItem]
