@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from pytest_httpx import HTTPXMock
 
@@ -50,6 +52,32 @@ class TestSyncClient:
         with Octivas(api_key="oc-test01234567890123456789012") as client:
             with pytest.raises(BadRequestError):
                 client.scrape("not-a-url")
+
+    def test_crawl_forwards_prompt_and_schema_for_json(self, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/crawl",
+            json={
+                "success": True,
+                "url": "https://docs.example.com",
+                "pages_crawled": 1,
+                "credits_used": 1,
+                "pages": [],
+            },
+        )
+        with Octivas(api_key="oc-test01234567890123456789012", base_url=BASE_URL) as client:
+            client.crawl(
+                "https://docs.example.com",
+                limit=2,
+                formats=["markdown", "json"],
+                prompt="List section headings",
+                schema={"type": "object", "properties": {"headings": {"type": "array"}}},
+            )
+        req = httpx_mock.get_request()
+        assert req is not None
+        body = json.loads(req.content.decode())
+        assert body["formats"] == ["markdown", "json"]
+        assert body["prompt"] == "List section headings"
+        assert body["schema"]["type"] == "object"
 
     def test_crawl_success(self, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(

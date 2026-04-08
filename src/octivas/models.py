@@ -52,7 +52,7 @@ class PageContent(BaseModel):
     raw_html: str | None = None
     screenshot: str | None = None
     links: list[str] | None = None
-    json_data: dict[str, Any] | None = Field(default=None, alias="json")
+    json_data: Any | None = Field(default=None, alias="json")
     images: list[str] | None = None
     summary: str | None = None
     metadata: PageMetadata | None = None
@@ -86,7 +86,7 @@ class ScrapeResponse(BaseModel):
     raw_html: str | None = None
     screenshot: str | None = None
     links: list[str] | None = None
-    json_data: dict[str, Any] | None = Field(default=None, alias="json")
+    json_data: Any | None = Field(default=None, alias="json")
     images: list[str] | None = None
     summary: str | None = None
     metadata: PageMetadata | None = None

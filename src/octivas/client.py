@@ -35,7 +35,7 @@ def _build_headers(api_key: str) -> dict[str, str]:
     return {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "User-Agent": "octivas-python/0.1.1",
+        "User-Agent": "octivas-python/0.1.2",
     }
 
 
@@ -232,6 +232,8 @@ class Octivas:
         *,
         limit: int = 10,
         formats: list[ContentFormat] | None = None,
+        schema: dict[str, Any] | None = None,
+        prompt: str | None = None,
         exclude_paths: list[str] | None = None,
         include_paths: list[str] | None = None,
         max_depth: int | None = None,
@@ -247,6 +249,10 @@ class Octivas:
         payload: dict[str, Any] = {"url": url, "limit": limit}
         if formats is not None:
             payload["formats"] = formats
+        if schema is not None:
+            payload["schema"] = schema
+        if prompt is not None:
+            payload["prompt"] = prompt
         if exclude_paths is not None:
             payload["exclude_paths"] = exclude_paths
         if include_paths is not None:
@@ -444,6 +450,8 @@ class AsyncOctivas:
         *,
         limit: int = 10,
         formats: list[ContentFormat] | None = None,
+        schema: dict[str, Any] | None = None,
+        prompt: str | None = None,
         exclude_paths: list[str] | None = None,
         include_paths: list[str] | None = None,
         max_depth: int | None = None,
@@ -459,6 +467,10 @@ class AsyncOctivas:
         payload: dict[str, Any] = {"url": url, "limit": limit}
         if formats is not None:
             payload["formats"] = formats
+        if schema is not None:
+            payload["schema"] = schema
+        if prompt is not None:
+            payload["prompt"] = prompt
         if exclude_paths is not None:
             payload["exclude_paths"] = exclude_paths
         if include_paths is not None:
