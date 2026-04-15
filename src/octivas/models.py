@@ -92,35 +92,89 @@ class ScrapeResponse(BaseModel):
     metadata: PageMetadata | None = None
 
 
-class BatchScrapeJob(BaseModel):
-    """Response when submitting a batch scrape job."""
+class MapLink(BaseModel):
+    """Single link discovered by a map operation."""
 
-    success: bool
-    job_id: str
-    status: str
-    total_urls: int
-
-
-class BatchScrapeStatus(BaseModel):
-    """Response when polling a batch scrape job."""
-
-    success: bool
-    job_id: str
-    status: str
-    completed: int
-    total: int
-    credits_used: int = 0
-    results: list[ScrapeResponse] = []
+    url: str
+    title: str | None = None
+    description: str | None = None
 
 
-class CrawlResponse(BaseModel):
-    """Response from crawling a website."""
+class MapResponse(BaseModel):
+    """Response from URL mapping / site discovery."""
 
     success: bool
     url: str
-    pages_crawled: int
+    links_count: int
+    links: list[MapLink]
+
+
+# ── Job models ───────────────────────────────────────────────────────────────
+
+
+class JobProgress(BaseModel):
+    """Progress counters for a running job."""
+
+    completed: int
+    total: int
+
+
+class JobError(BaseModel):
+    """Error details attached to a failed job."""
+
+    message: str
+    type: str
+
+
+class JobSubmitResponse(BaseModel):
+    """Response when submitting an async job (crawl or batch scrape)."""
+
+    success: bool
+    job_id: str
+    status: str
+    total: int
+
+
+class JobStatusResponse(BaseModel):
+    """Full status of a single job, optionally including results."""
+
+    success: bool
+    job_id: str
+    type: str
+    status: str
+    provider: str
+    progress: JobProgress
     credits_used: int = 0
-    pages: list[PageContent]
+    error: JobError | None = None
+    created_at: str | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
+    results: Any | None = None
+
+
+class JobListItem(BaseModel):
+    """Summary of a job in a listing (no results)."""
+
+    job_id: str
+    type: str
+    status: str
+    provider: str
+    progress: JobProgress = JobProgress(completed=0, total=0)
+    credits_used: int = 0
+    error: JobError | None = None
+    organization_id: str | None = None
+    created_at: str | None = None
+    finished_at: str | None = None
+
+
+class JobListResponse(BaseModel):
+    """Paginated list of jobs."""
+
+    success: bool
+    jobs: list[JobListItem]
+    total: int
+    page: int
+    limit: int
 
 
 class SearchResponse(BaseModel):

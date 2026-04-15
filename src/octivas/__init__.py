@@ -11,10 +11,15 @@ from .exceptions import (
     ServerError,
 )
 from .models import (
-    BatchScrapeJob,
-    BatchScrapeStatus,
-    CrawlResponse,
+    JobError,
+    JobListItem,
+    JobListResponse,
+    JobProgress,
+    JobStatusResponse,
+    JobSubmitResponse,
     Location,
+    MapLink,
+    MapResponse,
     PageContent,
     PageMetadata,
     ScrapeResponse,
@@ -22,15 +27,20 @@ from .models import (
     SearchResultItem,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.3"
 
 __all__ = [
     "Octivas",
     "AsyncOctivas",
-    "BatchScrapeJob",
-    "BatchScrapeStatus",
-    "CrawlResponse",
+    "JobError",
+    "JobListItem",
+    "JobListResponse",
+    "JobProgress",
+    "JobStatusResponse",
+    "JobSubmitResponse",
     "Location",
+    "MapLink",
+    "MapResponse",
     "PageContent",
     "PageMetadata",
     "ScrapeResponse",

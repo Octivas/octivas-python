@@ -58,10 +58,9 @@ class TestSyncClient:
             url=f"{BASE_URL}/api/v1/crawl",
             json={
                 "success": True,
-                "url": "https://docs.example.com",
-                "pages_crawled": 1,
-                "credits_used": 1,
-                "pages": [],
+                "job_id": "crawl-001",
+                "status": "pending",
+                "total": 2,
             },
         )
         with Octivas(api_key="oc-test01234567890123456789012", base_url=BASE_URL) as client:
@@ -84,19 +83,16 @@ class TestSyncClient:
             url=f"{BASE_URL}/api/v1/crawl",
             json={
                 "success": True,
-                "url": "https://docs.example.com",
-                "pages_crawled": 2,
-                "credits_used": 2,
-                "pages": [
-                    {"url": "https://docs.example.com/", "markdown": "# Docs"},
-                    {"url": "https://docs.example.com/start", "markdown": "# Start"},
-                ],
+                "job_id": "crawl-002",
+                "status": "pending",
+                "total": 5,
             },
         )
         with Octivas(api_key="oc-test01234567890123456789012") as client:
             result = client.crawl("https://docs.example.com", limit=5)
-        assert result.pages_crawled == 2
-        assert len(result.pages) == 2
+        assert result.job_id == "crawl-002"
+        assert result.status == "pending"
+        assert result.total == 5
 
     def test_search_success(self, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
@@ -122,18 +118,19 @@ class TestSyncClient:
             json={
                 "success": True,
                 "job_id": "abc123",
-                "status": "processing",
-                "total_urls": 2,
+                "status": "pending",
+                "total": 2,
             },
         )
         httpx_mock.add_response(
-            url=f"{BASE_URL}/api/v1/batch/scrape/abc123",
+            url=f"{BASE_URL}/api/v1/jobs/abc123?include_results=true",
             json={
                 "success": True,
                 "job_id": "abc123",
+                "type": "batch_scrape",
                 "status": "completed",
-                "completed": 2,
-                "total": 2,
+                "provider": "default",
+                "progress": {"completed": 2, "total": 2},
                 "credits_used": 2,
                 "results": [
                     {"success": True, "url": "https://a.com", "markdown": "A"},
@@ -144,9 +141,78 @@ class TestSyncClient:
         with Octivas(api_key="oc-test01234567890123456789012") as client:
             job = client.batch_scrape(["https://a.com", "https://b.com"])
             assert job.job_id == "abc123"
-            status = client.batch_scrape_status("abc123")
+            assert job.total == 2
+            status = client.get_job("abc123", include_results=True)
             assert status.status == "completed"
             assert len(status.results) == 2
+
+    def test_map_success(self, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/map",
+            json={
+                "success": True,
+                "url": "https://example.com",
+                "links_count": 2,
+                "links": [
+                    {"url": "https://example.com/", "title": "Home"},
+                    {"url": "https://example.com/about", "title": "About", "description": "About us"},
+                ],
+            },
+        )
+        with Octivas(api_key="oc-test01234567890123456789012") as client:
+            result = client.map("https://example.com")
+        assert result.links_count == 2
+        assert result.links[0].url == "https://example.com/"
+        assert result.links[1].description == "About us"
+
+    def test_list_jobs(self, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/jobs?page=1&limit=20",
+            json={
+                "success": True,
+                "jobs": [
+                    {
+                        "job_id": "job-1",
+                        "type": "crawl",
+                        "status": "completed",
+                        "provider": "default",
+                        "progress": {"completed": 5, "total": 5},
+                        "credits_used": 5,
+                        "created_at": "2026-04-15T10:00:00Z",
+                        "finished_at": "2026-04-15T10:01:00Z",
+                    }
+                ],
+                "total": 1,
+                "page": 1,
+                "limit": 20,
+            },
+        )
+        with Octivas(api_key="oc-test01234567890123456789012") as client:
+            result = client.list_jobs()
+        assert result.total == 1
+        assert result.jobs[0].job_id == "job-1"
+        assert result.jobs[0].type == "crawl"
+
+    def test_get_job(self, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/jobs/job-1",
+            json={
+                "success": True,
+                "job_id": "job-1",
+                "type": "crawl",
+                "status": "completed",
+                "provider": "default",
+                "progress": {"completed": 5, "total": 5},
+                "credits_used": 5,
+                "created_at": "2026-04-15T10:00:00Z",
+                "finished_at": "2026-04-15T10:01:00Z",
+            },
+        )
+        with Octivas(api_key="oc-test01234567890123456789012") as client:
+            result = client.get_job("job-1")
+        assert result.job_id == "job-1"
+        assert result.status == "completed"
+        assert result.progress.completed == 5
 
 
 @pytest.mark.anyio
